@@ -1,6 +1,6 @@
-# Infodemiologia — Aplicativos de Saúde na Google Play Store
+# A Onipresença dos Sistemas de Informação em Saúde: Uma Análise da Integração do Ecossistema mHealth via Dispositivos Móveis
 
-Estudo observacional de **Infodemiologia/Infometria** com análise de sentimentos e mineração de texto sobre aplicativos de saúde na Google Play Store brasileira.
+Estudo de **Infodemiologia e Infometria** focado na análise de métricas de software e percepção do usuário no ecossistema digital de saúde, com ênfase na integração de Sistemas de Informação em Saúde (SIS) via aplicativos móveis (mHealth) na Google Play Store.
 
 ## Conformidade Ética
 - **Resolução CNS 510/2016** — Dados secundários de acesso público (dispensa CEP)
@@ -13,13 +13,16 @@ Estudo observacional de **Infodemiologia/Infometria** com análise de sentimento
 
 ```
 ├── pipeline_principal.py       # Orquestrador — executa todas as fases
+├── csv_para_word.py            # Conversor CSV → Word (.docx)
 ├── src/
 │   ├── __init__.py             # Pacote (versão, autor)
 │   ├── config.py               # Configuração centralizada
-│   ├── coleta.py               # Fases 1-2: scraping da Play Store
+│   ├── coleta.py               # Fases 1-2: seleção interativa de descritores + scraping
+│   ├── lista_coleta.py         # Fase 2.5: lista Word de apps coletados
 │   ├── limpeza.py              # Fase 3: filtragem e limpeza
-│   ├── quantitativa.py         # Fase 4A: estatística e correlação
-│   ├── qualitativa.py          # Fase 4B: PLN, sentimento, LDA
+│   ├── selecao.py              # Fase 3.5: seleção interativa de apps via terminal
+│   ├── quantitativa.py         # Fase 4A: estatística descritiva e correlação
+│   ├── qualitativa.py          # Fase 4B: PLN, sentimento, temas, LDA
 │   └── relatorio.py            # Fase 5: relatório Word (.docx)
 ├── requirements.txt
 ├── .gitignore
@@ -31,6 +34,7 @@ Estudo observacional de **Infodemiologia/Infometria** com análise de sentimento
 ├── resultados/                 # (gerado) gráficos, tabelas, relatórios
 │   ├── graficos/
 │   ├── tabelas/
+│   ├── tabelas_word/
 │   └── relatorios/
 └── logs/                       # (gerado) logs de execução
 ```
@@ -57,37 +61,61 @@ pip install -r requirements.txt
 
 ## Uso
 
-```bash
-# Pipeline completo (coleta → limpeza → análise → relatório Word)
-python pipeline_principal.py
+### Pipeline completo (com seleção interativa de descritores e apps)
 
-# Fases individuais
-python pipeline_principal.py --fase 1          # Coleta
+```bash
+python pipeline_principal.py
+```
+
+### Usando descritores padrão (sem edição interativa)
+
+```bash
+python pipeline_principal.py --descritores-padrao
+```
+
+### Fases individuais
+
+```bash
+python pipeline_principal.py --fase 1          # Coleta (com seleção de descritores)
+python pipeline_principal.py --fase 2.5        # Lista Word de revisão
 python pipeline_principal.py --fase 3          # Limpeza
+python pipeline_principal.py --fase 3.5        # Seleção interativa de apps
 python pipeline_principal.py --fase 4a         # Quantitativa
 python pipeline_principal.py --fase 4b         # Qualitativa (PLN)
 python pipeline_principal.py --fase 5          # Relatório Word
-python pipeline_principal.py --fase 3 4a 4b 5  # Limpeza + Análises + Relatório
+python pipeline_principal.py --fase 6          # Conversão CSV → Word
+python pipeline_principal.py --fase 3 3.5 4a 4b 5 6  # Limpeza → Análise → Relatório
+```
+
+### Opções de seleção de apps
+
+```bash
+python pipeline_principal.py --sem-selecao     # Usa todos os apps (sem perguntar)
+python pipeline_principal.py --reselecionar    # Força nova seleção interativa
 ```
 
 ---
 
-## Fases do Pipeline
+## Pipeline — Fases
 
 | Fase | Módulo | Descrição |
 |------|--------|-----------|
-| 1-2 | `src/coleta.py` | Busca por 10 descritores na Play Store; extrai metadados + até 200 reviews/app; anonimiza usernames (LGPD) |
-| 3 | `src/limpeza.py` | Remove duplicatas e categorias irrelevantes; filtra ≥1.000 instalações e atualização ≤24 meses; classifica desenvolvedores |
-| 4A | `src/quantitativa.py` | Estatística descritiva; Pearson/Spearman (atualização × score); gráficos de distribuição e correlação |
-| 4B | `src/qualitativa.py` | Sentimento (TextBlob + dicionário PT-BR); 5 eixos temáticos; LDA (5 tópicos); WordCloud; frequência de palavras |
-| 5 | `src/relatorio.py` | Gera documento Word com capa, metodologia, resultados interpretativos, gráficos inline e lista de apps |
+| **1** | `src/coleta.py` | **Seleção de Descritores** — O usuário revisa, adiciona ou remove palavras-chave via terminal |
+| **1-2** | `src/coleta.py` | **Extração (Mining)** — Busca na Play Store e extrai metadados + até 200 reviews/app |
+| **2.5** | `src/lista_coleta.py` | Gera documento Word com todos os apps coletados para revisão manual |
+| **3** | `src/limpeza.py` | **Data Cleaning** — Remove duplicatas, filtra categorias, ≥1.000 instalações, classifica desenvolvedores |
+| **3.5** | `src/selecao.py` | **Seleção Interativa** — O usuário escolhe via terminal quais apps entram na análise |
+| **4A** | `src/quantitativa.py` | Estatística descritiva; Correlação de Pearson; gráficos de distribuição |
+| **4B** | `src/qualitativa.py` | Sentimento (TextBlob + dicionário PT-BR); 5 eixos temáticos; LDA; WordCloud |
+| **5** | `src/relatorio.py` | Relatório Word completo com metodologia, resultados e interpretações |
+| **6** | `csv_para_word.py` | Conversão de CSVs para tabelas Word formatadas |
 
-### Eixos Temáticos
-1. **Interoperabilidade** — Sincronização e integração de dados
-2. **Segurança e Privacidade** — Proteção de dados pessoais
-3. **Usabilidade (UX)** — Facilidade de uso da interface
-4. **Funcionalidade e Bugs** — Erros, travamentos, crashes
-5. **Desempenho** — Lentidão, consumo de bateria/memória
+### Eixos Temáticos (Fase 4B)
+1. **Interoperabilidade e Integração de Dados** — Sincronização, API, prontuários
+2. **Segurança da Informação e Privacidade** — LGPD, criptografia, vazamentos
+3. **Usabilidade e Experiência do Usuário (UX)** — Interface, navegação, acessibilidade
+4. **Funcionalidade e Estabilidade Técnica** — Bugs, crashes, erros
+5. **Desempenho e Infraestrutura** — Lentidão, memória, bateria, servidor
 
 ---
 

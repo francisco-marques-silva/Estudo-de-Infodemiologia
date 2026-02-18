@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Fase 3 — Filtragem e limpeza de dados.
+Critérios alinhados ao estudo: Sistemas de Informação em Saúde / mHealth.
 """
 
 import logging

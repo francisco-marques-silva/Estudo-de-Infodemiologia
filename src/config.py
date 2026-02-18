@@ -1,11 +1,26 @@
 # -*- coding: utf-8 -*-
 """
 Configurações centralizadas do projeto.
+Título: A Onipresença dos Sistemas de Informação em Saúde: Uma Análise da
+        Integração do Ecossistema mHealth via Dispositivos Móveis.
 Todos os caminhos, parâmetros e constantes ficam aqui.
 """
 
 from pathlib import Path
 from datetime import datetime, timedelta
+
+# ==============================================================================
+# METADADOS DO PROJETO
+# ==============================================================================
+
+TITULO_PROJETO = (
+    "A Onipresença dos Sistemas de Informação em Saúde: "
+    "Uma Análise da Integração do Ecossistema mHealth via Dispositivos Móveis"
+)
+SUBTITULO_PROJETO = (
+    "Estudo de Infodemiologia e Infometria — Análise de Métricas de Software "
+    "e Percepção do Usuário no Ecossistema Digital de Saúde"
+)
 
 # ==============================================================================
 # CAMINHOS
@@ -32,22 +47,47 @@ for _d in [RAW_DIR, REVIEWS_DIR, CLEAN_DIR, GRAFICOS_DIR, TABELAS_DIR,
 # PARÂMETROS DE COLETA (Fases 1+2)
 # ==============================================================================
 
-DESCRITORES = [
+# Descritores padrão — focados em Sistemas de Informação em Saúde (SIS)
+# O usuário pode adicionar/remover descritores interativamente na Fase 1.
+DESCRITORES_PADRAO = [
+    # ── SIS / Prontuário Eletrônico ───
+    "prontuário eletrônico saúde",
+    "sistema informação saúde",
+    "electronic health record",
+    "EHR saúde Brasil",
+    "health information system",
+    # ── Sistemas Governamentais / SUS ───
     "e-SUS",
-    "MySUS",
     "ConecteSUS",
-    "prontuário eletrônico",
+    "Meu SUS Digital",
+    "DATASUS",
+    "SISAB",
+    "CNES saúde",
+    # ── Interoperabilidade e Integração ───
+    "interoperabilidade saúde",
+    "HL7 FHIR saúde",
+    "integração prontuário",
+    "API saúde",
+    # ── mHealth / Saúde Digital ───
+    "mHealth Brasil",
+    "saúde digital",
+    "telemedicina",
+    "telessaúde",
+    "teleconsulta",
+    # ── Vigilância e Gestão ───
     "vigilância epidemiológica",
-    "saúde pública Brasil",
-    "telemedicina SUS",
-    "vacina SUS",
-    "agente comunitário saúde",
-    "telessaúde Brasil",
+    "gestão hospitalar",
+    "farmácia hospitalar sistema",
+    "laboratório saúde sistema",
+    "SINAN vigilância",
 ]
+
+# Cópia mutável usada em runtime (pode ser alterada interativamente)
+DESCRITORES = list(DESCRITORES_PADRAO)
 
 CATEGORIAS_ALVO  = ["MEDICAL", "HEALTH_AND_FITNESS"]
 MAX_RESULTADOS   = 30     # apps por descritor
-MAX_REVIEWS      = 100    # comentários por app
+MAX_REVIEWS      = 200    # comentários por app
 IDIOMA           = "pt_BR"
 PAIS             = "br"
 SLEEP_BUSCA      = 1.0    # segundos entre buscas
@@ -62,32 +102,48 @@ MESES_OBSOLESCENCIA    = 24
 DATA_REFERENCIA        = datetime.now()
 DATA_CORTE_ATUALIZACAO = DATA_REFERENCIA - timedelta(days=MESES_OBSOLESCENCIA * 30)
 
-# Palavras-chave de inclusão temática
+# Palavras-chave de inclusão temática — foco em SIS e integração mHealth
 KEYWORDS_INCLUSAO = [
+    # ── Prontuário / EHR ───
     "prontuário", "prontuario", "ehr", "electronic health",
-    "sus", "datasus", "e-sus", "esus",
+    "medical record", "registro eletrônico", "registro eletronico",
+    # ── SUS / Gov ───
+    "sus", "datasus", "e-sus", "esus", "conecte sus", "conect sus",
+    "meu sus digital", "sisab", "sigtap",
     "ministério da saúde", "ministerio da saude",
     "secretaria de saúde", "secretaria de saude",
+    # ── Interoperabilidade / API / Integração ───
+    "interoperab", "hl7", "fhir", "api saúde", "api saude",
+    "integração", "integracao", "sincroniz", "sincroniza",
+    "conectividade", "padrão aberto", "padrao aberto",
+    "openehr", "dicom",
+    # ── Sistemas de Informação ───
+    "sistema de informação", "sistema de informacao",
+    "information system", "cnes", "sinan", "sinasc",
+    "sim ", "sivep", "sipni", "sisvan", "siab",
+    "gestão hospitalar", "gestao hospitalar",
+    "gestão clínica", "gestao clinica",
+    # ── mHealth / Saúde Digital ───
+    "mhealth", "m-health", "saúde digital", "saude digital",
+    "telemedicina", "teleconsulta", "telessaúde", "telessaude",
+    # ── Atenção à Saúde ───
     "ubs", "atenção básica", "atencao basica",
     "vigilância", "vigilancia", "epidemiológ",
-    "telemedicina", "teleconsulta", "telessaúde", "telessaude",
-    "saúde digital", "saude digital",
-    "interoperab", "hl7", "fhir", "api saúde", "api saude",
     "vacinação", "vacinacao", "imunização", "imunizacao",
-    "samu", "caps", "cnes", "sinan", "sinasc", "sim ",
+    "samu", "caps",
     "farmácia popular", "farmacia popular",
     "agente comunitário", "agente comunitario",
-    "acs ", "estratégia saúde família",
+    "estratégia saúde família",
     "saúde pública", "saude publica", "public health",
+    # ── Clínico / Hospitalar ───
     "hospital", "clínic", "clinic", "laborat",
     "diagnóstico", "diagnostico",
     "prescrição", "prescricao", "receita médica",
     "hemograma", "exame", "laudo",
-    "enfermagem", "medical record",
-    "conecte sus", "meu sus digital", "conect sus",
+    "enfermagem",
 ]
 
-# Palavras-chave de exclusão (fitness recreativo)
+# Palavras-chave de exclusão (fitness recreativo / sem relação com SIS)
 KEYWORDS_EXCLUSAO_TITULO = [
     "academia", "gym", "workout", "fitness tracker",
     "dieta", "emagrecer", "perder peso", "caloria",
@@ -95,9 +151,11 @@ KEYWORDS_EXCLUSAO_TITULO = [
     "corrida", "running", "step counter", "pedômetro",
     "musculação", "musculacao", "treino",
     "receita culinária", "receita culinaria",
+    "personal trainer", "bodybuilding",
+    "sleep tracker", "ciclo menstrual",
 ]
 
-# Classificação de desenvolvedores
+# Classificação de desenvolvedores (3 categorias)
 KEYWORDS_GOV = [
     "ministério", "ministerio", "secretaria", "governo",
     "prefeitura", "municipal", "estadual", "federal",
@@ -107,11 +165,11 @@ KEYWORDS_GOV = [
 ]
 
 # ==============================================================================
-# EIXOS TEMÁTICOS (Fase 4B)
+# EIXOS TEMÁTICOS (Fase 4B) — Dimensões da Integração mHealth/SIS
 # ==============================================================================
 
 EIXOS_TEMATICOS = {
-    "Interoperabilidade": {
+    "Interoperabilidade e Integração de Dados": {
         "keywords": [
             "sincroniz", "sincronia", "integra", "dados não",
             "dados nao", "conectar", "conexão", "conexao",
@@ -122,10 +180,13 @@ EIXOS_TEMATICOS = {
             "não atualiza", "nao atualiza", "desconect",
             "compatível", "compativel", "incompatível", "incompativel",
             "vincular", "cadastro", "login", "autenticação",
+            "interoperab", "fhir", "hl7", "banco de dados",
+            "prontuário", "prontuario", "registro",
+            "migrar", "migração", "backup",
         ],
         "cor": "#1565C0",
     },
-    "Segurança e Privacidade": {
+    "Segurança da Informação e Privacidade": {
         "keywords": [
             "segurança", "seguranca", "privacidade", "dados pessoais",
             "lgpd", "proteção", "protecao", "vazamento", "vazar",
@@ -134,10 +195,12 @@ EIXOS_TEMATICOS = {
             "informação pessoal", "informacao pessoal",
             "confiável", "confiavel", "desconfi",
             "expor", "exposição", "dados sensíveis", "dados sensiveis",
+            "autenticação", "autenticacao", "token", "biometria",
+            "certificado digital", "assinatura digital",
         ],
         "cor": "#C62828",
     },
-    "Usabilidade (UX)": {
+    "Usabilidade e Experiência do Usuário (UX)": {
         "keywords": [
             "difícil", "dificil", "complicad", "confus",
             "interface", "tela", "botão", "botao", "menu",
@@ -148,10 +211,11 @@ EIXOS_TEMATICOS = {
             "letra pequena", "não consigo", "nao consigo",
             "complicado de usar", "difícil de usar",
             "ux", "experiência", "experiencia", "usabilidad",
+            "tutorial", "ajuda", "manual",
         ],
         "cor": "#F57F17",
     },
-    "Funcionalidade e Bugs": {
+    "Funcionalidade e Estabilidade Técnica": {
         "keywords": [
             "bug", "erro", "crash", "trava", "travando",
             "fecha sozinho", "fechou", "parou", "parar de funcionar",
@@ -161,10 +225,11 @@ EIXOS_TEMATICOS = {
             "não responde", "nao responde", "congelou", "congela",
             "lixo", "péssimo", "pessimo", "horrível", "horrivel",
             "inútil", "inutil", "porcaria",
+            "instável", "instavel", "versão", "versao",
         ],
         "cor": "#6A1B9A",
     },
-    "Desempenho": {
+    "Desempenho e Infraestrutura": {
         "keywords": [
             "lento", "lentidão", "lentidao", "demora",
             "pesado", "memória", "memoria", "bateria",
@@ -172,6 +237,8 @@ EIXOS_TEMATICOS = {
             "carregando", "loading", "travando", "lag",
             "otimiz", "rápido", "rapido", "veloz",
             "internet", "banda", "wifi", "3g", "4g", "5g",
+            "servidor fora", "indisponível", "indisponivel",
+            "tempo de resposta", "timeout",
         ],
         "cor": "#2E7D32",
     },

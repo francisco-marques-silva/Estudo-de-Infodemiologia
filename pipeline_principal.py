@@ -1,25 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Pipeline Principal — Infodemiologia de Aplicativos de Saúde na Google Play Store
+Pipeline Principal — A Onipresença dos Sistemas de Informação em Saúde:
+Uma Análise da Integração do Ecossistema mHealth via Dispositivos Móveis
 
 Executa todas as fases sequencialmente:
+  1.   Seleção interativa de descritores (palavras-chave) via terminal
   1-2. Coleta de dados (scraping Google Play Store)
   2.5  Lista Word de TODOS os apps coletados (para revisão manual)
-  3.   Limpeza e filtragem
-  3.5  Seleção interativa dos apps para análise
-  4A.  Análise quantitativa (estatística descritiva e correlação)
+  3.   Limpeza e filtragem (critérios de inclusão/exclusão)
+  3.5  Seleção interativa dos apps para análise via terminal
+  4A.  Análise quantitativa (estatística descritiva e correlação de Pearson)
   4B.  Análise qualitativa (PLN: sentimento, temas, LDA)
   5.   Geração de relatório Word (.docx)
   6.   Conversão automática de todos os CSVs para Word
 
 Uso:
-    python pipeline_principal.py                    # executa tudo (com seleção)
-    python pipeline_principal.py --sem-selecao      # pula a seleção (usa todos)
-    python pipeline_principal.py --reselecionar     # força nova seleção
+    python pipeline_principal.py                    # executa tudo (interativo)
+    python pipeline_principal.py --sem-selecao      # pula seleção de apps (usa todos)
+    python pipeline_principal.py --reselecionar     # força nova seleção de apps
+    python pipeline_principal.py --descritores-padrao  # usa descritores padrão (não interativo)
+    python pipeline_principal.py --fase 1           # apenas coleta (com seleção de descritores)
     python pipeline_principal.py --fase 2.5         # apenas lista Word de revisão
     python pipeline_principal.py --fase 3           # apenas limpeza
-    python pipeline_principal.py --fase 3.5         # apenas seleção interativa
+    python pipeline_principal.py --fase 3.5         # apenas seleção interativa de apps
     python pipeline_principal.py --fase 4a 4b       # apenas análises
     python pipeline_principal.py --fase 5           # apenas relatório
     python pipeline_principal.py --fase 6           # apenas conversão CSV→Word
@@ -56,7 +60,7 @@ def _configurar_log():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Pipeline de Infodemiologia — Aplicativos de Saúde")
+        description="Pipeline — Sistemas de Informação em Saúde via mHealth")
     parser.add_argument(
         "--fase", nargs="*", default=None,
         help="Fases a executar: 1 (coleta) 3 (limpeza) 3.5 (seleção) 4a 4b 5 6. "
@@ -67,16 +71,18 @@ def main():
     parser.add_argument(
         "--reselecionar", action="store_true",
         help="Força nova seleção interativa mesmo que já exista uma seleção salva.")
+    parser.add_argument(
+        "--descritores-padrao", action="store_true",
+        help="Usa os descritores padrão sem edição interativa.")
     args = parser.parse_args()
     fases = set(f.lower() for f in args.fase) if args.fase else {"1","2.5","3","3.5","4a","4b","5","6"}
 
-    # determinar modo de seleção
+    # determinar modo de seleção de apps
     if args.sem_selecao:
         modo_selecao = "todos"
     elif args.reselecionar:
         modo_selecao = "interativo"
     else:
-        # se já existe seleção salva e a fase não foi explicitamente pedida, carrega
         from src.config import CLEAN_DIR as _CLEAN
         _sel = _CLEAN / "apps_selecionados.csv"
         if _sel.exists() and args.fase and "3.5" not in (args.fase or []):
@@ -84,18 +90,21 @@ def main():
         else:
             modo_selecao = "interativo"
 
+    # determinar modo de seleção de descritores
+    modo_descritores = "padrao" if args.descritores_padrao else "interativo"
+
     logger = _configurar_log()
     logger.info("=" * 70)
-    logger.info("PIPELINE DE INFODEMIOLOGIA — INÍCIO")
+    logger.info("PIPELINE — SISTEMAS DE INFORMAÇÃO EM SAÚDE / mHealth")
     logger.info(f"Fases selecionadas: {sorted(fases)}")
     logger.info("=" * 70)
     t0 = time.time()
 
     # ── Fase 1-2: Coleta ──────────────────────────────────────────────────
     if "1" in fases:
-        logger.info("▶ FASE 1-2: Coleta de dados")
+        logger.info("▶ FASE 1-2: Seleção de descritores + Coleta de dados")
         from src.coleta import executar_coleta
-        df_apps, df_reviews = executar_coleta()
+        df_apps, df_reviews = executar_coleta(modo_descritores=modo_descritores)
         logger.info(f"  → {len(df_apps)} apps, {len(df_reviews)} reviews coletados")
 
     # ── Fase 2.5: Lista Word para revisão ────────────────────────────────

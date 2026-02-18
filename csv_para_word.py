@@ -186,7 +186,8 @@ def _gerar_capa(doc: Document, titulo_doc: str) -> None:
     doc.add_paragraph()
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = sub.add_run("Pipeline de Infodemiologia — Google Play Store")
+    r = sub.add_run(
+        "Sistemas de Informação em Saúde — Análise mHealth via Google Play Store")
     r.italic = True
     r.font.size = Pt(13)
 
@@ -207,7 +208,7 @@ def _gerar_capa(doc: Document, titulo_doc: str) -> None:
 def gerar_documento_unico(csvs: list[Path]) -> Path:
     """Gera um único .docx com todas as tabelas CSV."""
     doc = Document()
-    _gerar_capa(doc, "TABELAS DE RESULTADOS\nINFODEMIOLOGIA E INFOMETRIA")
+    _gerar_capa(doc, "TABELAS DE RESULTADOS\nSISTEMAS DE INFORMAÇÃO EM SAÚDE / mHEALTH")
 
     # sumário automático
     _add_heading(doc, "ÍNDICE DE TABELAS", 1)

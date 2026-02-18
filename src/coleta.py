@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Fases 1 + 2 — Busca de descritores e extração de metadados/reviews.
+Fases 1 + 2 — Seleção interativa de descritores, busca e extração de metadados/reviews.
+
+Fase 1:  O usuário pode revisar, adicionar ou remover palavras-chave de busca
+         (descritores) via terminal antes da coleta começar.
+Fase 2:  Extração automatizada de metadados e avaliações de cada app encontrado.
 """
 
+import shutil
 import time
 import json
 import logging
@@ -13,12 +18,133 @@ from tqdm import tqdm
 from google_play_scraper import search, app as gps_app, reviews, Sort
 
 from src.config import (
-    DESCRITORES, MAX_RESULTADOS, MAX_REVIEWS,
+    DESCRITORES, DESCRITORES_PADRAO, MAX_RESULTADOS, MAX_REVIEWS,
     IDIOMA, PAIS, SLEEP_BUSCA, SLEEP_APP,
     RAW_DIR, REVIEWS_DIR, LOG_DIR,
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ── seleção interativa de descritores ─────────────────────────────────────────
+
+def selecionar_descritores(modo: str = "interativo") -> list[str]:
+    """
+    Exibe os descritores padrão e permite ao usuário editá-los via terminal.
+
+    Parâmetros
+    ----------
+    modo : str
+        'interativo' → mostra e permite editar (padrão)
+        'padrao'     → usa os descritores padrão sem perguntar
+
+    Retorna
+    -------
+    Lista de descritores selecionados.
+    """
+    descritores = list(DESCRITORES_PADRAO)
+
+    if modo == "padrao":
+        return descritores
+
+    term_w = shutil.get_terminal_size(fallback=(120, 40)).columns
+    sep = "═" * min(term_w, 80)
+
+    print()
+    print(sep)
+    print("  FASE 1 — SELEÇÃO DE DESCRITORES (PALAVRAS-CHAVE)")
+    print(sep)
+    print()
+    print("  Os descritores abaixo serão usados para buscar aplicativos")
+    print("  na Google Play Store. Eles estão alinhados ao tema:")
+    print("  'Sistemas de Informação em Saúde / mHealth'")
+    print()
+
+    _exibir_descritores(descritores)
+
+    print("""
+  OPÇÕES:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Enter (vazio)   → ACEITAR todos os descritores acima               │
+  │  + termo         → ADICIONAR novo descritor                         │
+  │    Ex: + saúde mental SIS                                           │
+  │  - número(s)     → REMOVER descritor(es) pelo número                │
+  │    Ex: - 3 7 12                                                     │
+  │  = lista         → SUBSTITUIR TODOS por nova lista (sep. por ;)     │
+  │    Ex: = mHealth; prontuário; e-SUS; telemedicina                   │
+  │  ok              → CONFIRMAR e iniciar coleta                       │
+  └──────────────────────────────────────────────────────────────────────┘""")
+
+    while True:
+        try:
+            entrada = input("\n> Descritores: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n  Usando descritores padrão.")
+            break
+
+        if not entrada or entrada.lower() in ("ok", "confirmar"):
+            break
+
+        # ── adicionar ─────────────────────────────────────────────────
+        if entrada.startswith("+"):
+            novo = entrada[1:].strip()
+            if novo and novo not in descritores:
+                descritores.append(novo)
+                print(f"  ✔ Adicionado: '{novo}'")
+            elif novo in descritores:
+                print(f"  ⚠ '{novo}' já existe na lista.")
+            else:
+                print("  ⚠ Nenhum termo informado.")
+            _exibir_descritores(descritores)
+            continue
+
+        # ── remover ───────────────────────────────────────────────────
+        if entrada.startswith("-"):
+            nums = entrada[1:].strip().replace(",", " ").split()
+            removidos = []
+            for n in nums:
+                try:
+                    idx = int(n) - 1
+                    if 0 <= idx < len(descritores):
+                        removidos.append(descritores[idx])
+                except ValueError:
+                    pass
+            for r in removidos:
+                descritores.remove(r)
+                print(f"  ✔ Removido: '{r}'")
+            if not removidos:
+                print("  ⚠ Nenhum número válido.")
+            _exibir_descritores(descritores)
+            continue
+
+        # ── substituir tudo ───────────────────────────────────────────
+        if entrada.startswith("="):
+            novos = [d.strip() for d in entrada[1:].split(";") if d.strip()]
+            if novos:
+                descritores = novos
+                print(f"  ✔ Lista substituída ({len(descritores)} descritores).")
+                _exibir_descritores(descritores)
+            else:
+                print("  ⚠ Lista vazia. Use ponto-e-vírgula como separador.")
+            continue
+
+        print("  ⚠ Comando não reconhecido. Use +, -, =, ou Enter.")
+
+    # atualizar a variável global para que o pipeline use os descritores escolhidos
+    DESCRITORES.clear()
+    DESCRITORES.extend(descritores)
+
+    print(f"\n  ✔ {len(descritores)} descritor(es) confirmados para a busca.")
+    print()
+    return descritores
+
+
+def _exibir_descritores(descritores: list[str]) -> None:
+    """Imprime a lista numerada de descritores."""
+    print()
+    for i, d in enumerate(descritores, 1):
+        print(f"  {i:>3}. {d}")
+    print(f"\n  Total: {len(descritores)} descritor(es)")
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -92,18 +218,30 @@ def _extrair_reviews(app_id: str) -> list[dict]:
 
 # ── pipeline ──────────────────────────────────────────────────────────────────
 
-def executar_coleta() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Executa Fases 1+2 e retorna (df_apps, df_reviews)."""
+def executar_coleta(modo_descritores: str = "interativo") -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Executa Fases 1+2 e retorna (df_apps, df_reviews).
+
+    Parâmetros
+    ----------
+    modo_descritores : str
+        'interativo' → permite ao usuário editar descritores via terminal
+        'padrao'     → usa descritores padrão sem perguntar
+    """
+    # ── Fase 1: Seleção de descritores ────────────────────────────────────
+    descritores = selecionar_descritores(modo=modo_descritores)
+
     inicio = datetime.now()
     logger.info("=" * 60)
     logger.info("FASES 1+2 — Coleta de Dados na Play Store")
     logger.info(f"Início: {inicio.strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"Descritores: {len(descritores)}")
     logger.info("=" * 60)
 
     # Registrar sessão
     meta = {
         "data_coleta": inicio.isoformat(),
-        "descritores": DESCRITORES,
+        "descritores": descritores,
         "n_hits_busca": MAX_RESULTADOS,
         "n_reviews": MAX_REVIEWS,
         "idioma": IDIOMA,
@@ -115,7 +253,7 @@ def executar_coleta() -> tuple[pd.DataFrame, pd.DataFrame]:
     # Fase 1 — busca
     logger.info("── FASE 1: Busca de appIds ──")
     ids: set[str] = set()
-    for desc in tqdm(DESCRITORES, desc="Descritores"):
+    for desc in tqdm(descritores, desc="Descritores"):
         try:
             res = search(desc, lang=IDIOMA, country=PAIS, n_hits=MAX_RESULTADOS)
             novos = {r["appId"] for r in res}

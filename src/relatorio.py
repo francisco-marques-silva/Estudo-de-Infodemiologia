@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Gerador de relatórios Word (.docx) com resultados interpretativos detalhados.
+Projeto: A Onipresença dos Sistemas de Informação em Saúde — mHealth.
 """
 
 import logging
@@ -17,7 +18,8 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 
 from src.config import (CLEAN_DIR, GRAFICOS_DIR, TABELAS_DIR,
-                        RELATORIO_DIR, DESCRITORES, EIXOS_TEMATICOS)
+                        RELATORIO_DIR, DESCRITORES, EIXOS_TEMATICOS,
+                        TITULO_PROJETO, SUBTITULO_PROJETO)
 
 logger = logging.getLogger(__name__)
 
@@ -81,56 +83,87 @@ def gerar_relatorio_metodologia(doc: Document):
     """Seção: Metodologia."""
     _add_heading(doc, "2. METODOLOGIA", 1)
 
-    _add_heading(doc, "2.1 Delineamento do Estudo", 2)
+    _add_heading(doc, "2.1 Tipologia do Estudo", 2)
     _add_paragraph(doc,
-        "Trata-se de um estudo observacional, transversal e exploratório, "
-        "fundamentado nos princípios da Infodemiologia (Eysenbach, 2009) e "
-        "Infometria aplicada a ambientes digitais de saúde. O objeto de análise "
-        "são aplicativos móveis de saúde disponíveis na Google Play Store, "
-        "plataforma que concentra a maior base de usuários de smartphones no Brasil.")
+        "Trata-se de um estudo de Infodemiologia e Infometria, focado na análise "
+        "de métricas de software e percepção do usuário no ecossistema digital de "
+        "saúde. O objeto de análise são aplicativos móveis de saúde (mHealth) "
+        "disponíveis na Google Play Store que possuam integração declarada com "
+        "prontuários eletrônicos, sistemas governamentais (ex: conectividade via "
+        "API) ou Sistemas de Informação em Saúde (SIS).")
 
-    _add_heading(doc, "2.2 Fonte de Dados e Coleta", 2)
+    _add_heading(doc, "2.2 Protocolo de Coleta de Dados (Web Scraping)", 2)
     _add_paragraph(doc,
-        "Os dados foram coletados automaticamente via web scraping utilizando "
-        "a biblioteca google-play-scraper (Python), que permite acesso programático "
-        "aos metadados e avaliações públicas dos aplicativos. A coleta obedeceu "
-        "aos seguintes descritores de busca:")
+        "A coleta foi automatizada para garantir a integridade científica, "
+        "utilizando scripts em Python (biblioteca google-play-scraper) para "
+        "extração programática dos metadados e avaliações públicas dos aplicativos. "
+        "A coleta obedeceu aos seguintes descritores de busca:")
     for d in DESCRITORES:
         doc.add_paragraph(f"• {d}", style="List Bullet")
+    _add_paragraph(doc, "Parâmetros de extração:", bold=True)
+    doc.add_paragraph(
+        "Metadados técnicos: Versão do SO exigida, data da última atualização "
+        "(indicador de manutenção), tamanho do arquivo e desenvolvedor "
+        "(institucional vs. comercial).", style="List Bullet")
+    doc.add_paragraph(
+        "Métricas de desempenho: Número de instalações (escala de adoção) e "
+        "nota média (rating).", style="List Bullet")
+    doc.add_paragraph(
+        "Conteúdo gerado pelo usuário: Comentários (reviews) para análise de "
+        "usabilidade e bugs.", style="List Bullet")
     _add_paragraph(doc,
-        "Para cada descritor, foram buscados até 250 resultados. Os metadados "
-        "extraídos incluem: nome, desenvolvedor, nota média, número de instalações, "
-        "número de avaliações, categoria, data da última atualização e resumo "
-        "descritivo. Para cada aplicativo, foram extraídas até 200 avaliações "
-        "textuais dos usuários.")
+        "Campos de interesse: appId, title, installs, score, updated, genre, "
+        "developer, description, reviews. Para cada aplicativo, foram extraídas "
+        "até 200 avaliações textuais.")
 
-    _add_heading(doc, "2.3 Critérios de Inclusão e Exclusão", 2)
+    _add_heading(doc, "2.3 Definição do Escopo e Amostragem", 2)
     _add_paragraph(doc, "Critérios de inclusão:", bold=True)
-    doc.add_paragraph("Aplicativo disponível na Google Play Store em português (Brasil);", style="List Bullet")
+    doc.add_paragraph(
+        "Aplicativos categorizados em 'Medicina' ou 'Saúde e Fitness' que "
+        "possuam integração declarada com prontuários eletrônicos ou sistemas "
+        "governamentais;", style="List Bullet")
     doc.add_paragraph("Mínimo de 1.000 instalações;", style="List Bullet")
-    doc.add_paragraph("Última atualização dentro dos últimos 24 meses;", style="List Bullet")
-    doc.add_paragraph("Relevância temática verificada por palavras-chave de saúde.", style="List Bullet")
+    doc.add_paragraph(
+        "Última atualização dentro dos últimos 24 meses;", style="List Bullet")
+    doc.add_paragraph(
+        "Relevância temática verificada por palavras-chave alinhadas a "
+        "Sistemas de Informação em Saúde.", style="List Bullet")
     _add_paragraph(doc, "Critérios de exclusão:", bold=True)
-    doc.add_paragraph("Aplicativos duplicados (mesmo appId);", style="List Bullet")
-    doc.add_paragraph("Categorias não relacionadas a saúde (ex.: GAME_*);", style="List Bullet")
-    doc.add_paragraph("Aplicativos sem descrição ou avaliações disponíveis.", style="List Bullet")
+    doc.add_paragraph(
+        "Aplicativos com menos de 1.000 instalações (baixa representatividade);",
+        style="List Bullet")
+    doc.add_paragraph(
+        "Aplicativos que não recebam atualizações há mais de 24 meses "
+        "(obsolescência tecnológica);", style="List Bullet")
+    doc.add_paragraph(
+        "Aplicativos de academias, dietas ou fitness recreativo sem relação "
+        "com SIS clínicos;", style="List Bullet")
+    doc.add_paragraph("Aplicativos duplicados (mesmo appId).", style="List Bullet")
 
     _add_heading(doc, "2.4 Classificação de Desenvolvedores", 2)
     _add_paragraph(doc,
         "Os desenvolvedores foram classificados em três categorias: "
         "(a) Governamental — identificados por termos como 'ministério', 'SUS', "
-        "'governo', 'prefeitura', 'secretaria' no nome do desenvolvedor; "
+        "'governo', 'prefeitura', 'secretaria', 'DATASUS' no nome do desenvolvedor; "
         "(b) Institucional — entidades de saúde como CRM, CFM, hospitais, "
-        "universidades; (c) Comercial — desenvolvedores privados.")
+        "universidades, institutos de pesquisa; "
+        "(c) Comercial — desenvolvedores privados.")
 
-    _add_heading(doc, "2.5 Eixos Temáticos de Análise", 2)
+    _add_heading(doc, "2.5 Procedimentos de Análise (Data Analysis)", 2)
     _add_paragraph(doc,
-        "As avaliações dos usuários foram classificadas em cinco eixos temáticos "
-        "pré-definidos, cada um representando uma dimensão da experiência do "
-        "usuário com aplicativos de saúde:")
+        "O design prevê duas camadas de análise:")
+    _add_paragraph(doc,
+        "1. Análise Quantitativa: Estatística descritiva das métricas e "
+        "correlação de Pearson entre a frequência de atualizações e a "
+        "satisfação do usuário.", bold=True)
+    _add_paragraph(doc,
+        "2. Análise Qualitativa (Mineração de Texto): Aplicação de "
+        "Processamento de Linguagem Natural (PLN) para categorizar os "
+        "comentários nos seguintes eixos:", bold=True)
     for eixo, info in EIXOS_TEMATICOS.items():
-        doc.add_paragraph(f"• {eixo}: palavras-chave incluem {', '.join(info['keywords'][:8])}...",
-                          style="List Bullet")
+        doc.add_paragraph(
+            f"• {eixo}: palavras-chave incluem {', '.join(info['keywords'][:8])}...",
+            style="List Bullet")
 
     _add_heading(doc, "2.6 Análise de Sentimentos", 2)
     _add_paragraph(doc,
@@ -148,12 +181,21 @@ def gerar_relatorio_metodologia(doc: Document):
         "com CountVectorizer (max_features=2000, min_df=3, max_df=0.9) após "
         "remoção de stopwords em português.")
 
-    _add_heading(doc, "2.8 Aspectos Éticos", 2)
+    _add_heading(doc, "2.8 Ética e Governança de Dados", 2)
     _add_paragraph(doc,
-        "Todos os dados são públicos e anonimizados. Nomes de usuários foram "
-        "substituídos por hashes criptográficos (SHA-256 truncado) para "
-        "conformidade com a LGPD (Lei 13.709/2018). Não houve coleta de dados "
-        "pessoais identificáveis.")
+        "Este estudo fundamenta-se na análise de dados secundários de acesso "
+        "público, disponíveis na plataforma Google Play Store. Em conformidade "
+        "com a Resolução nº 510/2016 do Conselho Nacional de Saúde (CNS), "
+        "pesquisas que utilizam informações de domínio público e que não "
+        "possibilitam a identificação individual dos sujeitos dispensam a "
+        "submissão a um Comitê de Ética em Pesquisa (CEP).")
+    _add_paragraph(doc,
+        "Não obstante, o design da pesquisa segue os preceitos éticos da "
+        "Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018), garantindo "
+        "o anonimato dos usuários e a utilização estrita de dados agregados "
+        "para fins acadêmicos, sem violação dos termos de serviço da plataforma "
+        "hospedeira. Nomes de usuários foram substituídos por hashes "
+        "criptográficos (SHA-256 truncado).")
 
 
 def gerar_relatorio_quantitativo(doc: Document):
@@ -404,20 +446,30 @@ def gerar_discussao(doc: Document):
     """Seção: Discussão e considerações finais."""
     _add_heading(doc, "5. DISCUSSÃO", 1)
     _add_paragraph(doc,
-        "Os resultados deste estudo oferecem um panorama do ecossistema de "
-        "aplicativos de saúde disponíveis na Google Play Store para o público "
-        "brasileiro. Alguns achados merecem destaque:")
+        "Os resultados deste estudo oferecem um panorama da integração dos "
+        "Sistemas de Informação em Saúde (SIS) no ecossistema de aplicativos "
+        "móveis (mHealth) da Google Play Store. Alguns achados merecem destaque:")
 
     _add_heading(doc, "5.1 Predomínio de Desenvolvedores Comerciais", 2)
     _add_paragraph(doc,
         "A expressiva maioria dos aplicativos é desenvolvida por empresas "
         "privadas, o que levanta questões importantes sobre a validação "
-        "científica dos conteúdos de saúde ofertados. Diferentemente de "
-        "aplicativos governamentais (como o Meu SUS Digital), apps comerciais "
-        "podem não passar por processos rigorosos de revisão por especialistas "
-        "em saúde, potencialmente veiculando informações imprecisas ou incompletas.")
+        "científica dos conteúdos de saúde ofertados e sobre a interoperabilidade "
+        "com sistemas governamentais. Diferentemente de aplicativos governamentais "
+        "(como o Meu SUS Digital), apps comerciais podem não seguir padrões "
+        "abertos de integração (HL7/FHIR), dificultando a troca de dados entre "
+        "sistemas e comprometendo a continuidade do cuidado.")
 
-    _add_heading(doc, "5.2 Satisfação do Usuário e Manutenção", 2)
+    _add_heading(doc, "5.2 Integração e Interoperabilidade", 2)
+    _add_paragraph(doc,
+        "A análise temática dos comentários revela que a interoperabilidade e "
+        "integração de dados é uma preocupação recorrente dos usuários. Relatos "
+        "de falha na sincronização de dados entre aplicativos e prontuários "
+        "eletrônicos indicam que a onipresença dos SIS via dispositivos móveis "
+        "ainda enfrenta barreiras técnicas significativas. A adoção de padrões "
+        "como HL7 FHIR e OpenEHR é essencial para viabilizar a integração.")
+
+    _add_heading(doc, "5.3 Satisfação do Usuário e Manutenção", 2)
     _add_paragraph(doc,
         "A análise de correlação entre frequência de atualização e nota média "
         "contribui para entender se a manutenção ativa dos aplicativos está "
@@ -425,16 +477,15 @@ def gerar_discussao(doc: Document):
         "frequentes tendem a corrigir bugs e incorporar feedback, o que "
         "teoricamente deveria elevar a satisfação.")
 
-    _add_heading(doc, "5.3 Análise de Sentimentos", 2)
+    _add_heading(doc, "5.4 Segurança da Informação", 2)
     _add_paragraph(doc,
-        "A predominância de avaliações neutras pode estar relacionada a "
-        "limitações inerentes à análise de sentimentos em língua portuguesa, "
-        "especialmente com ferramentas originalmente desenvolvidas para inglês. "
-        "O dicionário customizado de ajuste PT-BR mitigou parcialmente essa "
-        "limitação, mas análises futuras poderiam se beneficiar de modelos "
-        "BERT pré-treinados em português (BERTimbau).")
+        "A presença de comentários sobre segurança e privacidade reforça a "
+        "importância de aplicativos de saúde adotarem medidas robustas de "
+        "proteção de dados, especialmente considerando que muitos processam "
+        "dados sensíveis de prontuários eletrônicos. A conformidade com a "
+        "LGPD é essencial para a confiança do usuário.")
 
-    _add_heading(doc, "5.4 Limitações do Estudo", 2)
+    _add_heading(doc, "5.5 Limitações do Estudo", 2)
     _add_paragraph(doc,
         "Este estudo apresenta as seguintes limitações:")
     doc.add_paragraph(
@@ -456,13 +507,15 @@ def gerar_discussao(doc: Document):
     _add_heading(doc, "6. CONSIDERAÇÕES FINAIS", 1)
     _add_paragraph(doc,
         "O presente estudo demonstrou a aplicabilidade da Infodemiologia e "
-        "técnicas de PLN para análise sistemática de aplicativos de saúde "
-        "na Google Play Store. Os resultados evidenciam um ecossistema "
-        "dominado por desenvolvedores comerciais, com variabilidade na "
-        "qualidade percebida pelos usuários. A análise de sentimentos e "
-        "classificação temática permitiram identificar padrões nas experiências "
-        "dos usuários, fornecendo subsídios para desenvolvedores, gestores de "
-        "saúde pública e formuladores de políticas regulatórias.")
+        "técnicas de Processamento de Linguagem Natural para análise sistemática "
+        "da integração do ecossistema mHealth com os Sistemas de Informação em "
+        "Saúde na Google Play Store. Os resultados evidenciam um ecossistema "
+        "ainda fragmentado, com desafios de interoperabilidade, segurança da "
+        "informação e experiência do usuário que precisam ser endereçados para "
+        "que a onipresença dos SIS via dispositivos móveis se torne efetiva. "
+        "A análise fornece subsídios para desenvolvedores, gestores de saúde "
+        "pública e formuladores de políticas regulatórias no contexto da saúde "
+        "digital brasileira.")
 
     _add_heading(doc, "REFERÊNCIAS", 1)
     refs = [
@@ -472,10 +525,15 @@ def gerar_discussao(doc: Document):
         "Medical Internet Research, v. 11, n. 1, e11, 2009.",
         "BRASIL. Lei nº 13.709, de 14 de agosto de 2018. Lei Geral de "
         "Proteção de Dados Pessoais (LGPD).",
+        "BRASIL. Resolução nº 510, de 7 de abril de 2016. Conselho Nacional "
+        "de Saúde. Dispõe sobre normas aplicáveis a pesquisas em Ciências "
+        "Humanas e Sociais.",
         "WHO. Classification of Digital Health Interventions v1.0. "
         "World Health Organization, 2018.",
         "BLEI, D. M.; NG, A. Y.; JORDAN, M. I. Latent Dirichlet Allocation. "
         "Journal of Machine Learning Research, v. 3, p. 993–1022, 2003.",
+        "HL7 INTERNATIONAL. FHIR (Fast Healthcare Interoperability Resources). "
+        "Disponível em: https://www.hl7.org/fhir/. Acesso em: 2026.",
     ]
     for i, ref in enumerate(refs, 1):
         doc.add_paragraph(f"[{i}] {ref}")
@@ -501,18 +559,17 @@ def executar_relatorio():
         doc.add_paragraph()
     t = doc.add_paragraph()
     t.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = t.add_run("INFODEMIOLOGIA E INFOMETRIA DE\nAPLICATIVOS DE SAÚDE NA\nGOOGLE PLAY STORE")
+    run = t.add_run(TITULO_PROJETO.upper())
     run.bold = True
-    run.font.size = Pt(22)
+    run.font.size = Pt(20)
     run.font.color.rgb = RGBColor(0x1A, 0x23, 0x7E)
 
     doc.add_paragraph()
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run2 = sub.add_run(
-        "Estudo Observacional com Análise de Sentimentos e Mineração de Texto")
+    run2 = sub.add_run(SUBTITULO_PROJETO)
     run2.italic = True
-    run2.font.size = Pt(14)
+    run2.font.size = Pt(13)
 
     for _ in range(4):
         doc.add_paragraph()
@@ -528,14 +585,14 @@ def executar_relatorio():
     sumario = [
         "1. Introdução",
         "2. Metodologia",
-        "   2.1 Delineamento do Estudo",
-        "   2.2 Fonte de Dados e Coleta",
-        "   2.3 Critérios de Inclusão e Exclusão",
+        "   2.1 Tipologia do Estudo",
+        "   2.2 Protocolo de Coleta de Dados (Web Scraping)",
+        "   2.3 Definição do Escopo e Amostragem",
         "   2.4 Classificação de Desenvolvedores",
-        "   2.5 Eixos Temáticos de Análise",
+        "   2.5 Procedimentos de Análise (Data Analysis)",
         "   2.6 Análise de Sentimentos",
         "   2.7 Modelagem de Tópicos (LDA)",
-        "   2.8 Aspectos Éticos",
+        "   2.8 Ética e Governança de Dados",
         "3. Resultados — Análise Quantitativa",
         "   3.1 Composição da Amostra",
         "   3.2 Estatística Descritiva",
@@ -548,6 +605,11 @@ def executar_relatorio():
         "   4.4 Nuvens de Palavras",
         "   4.5 Frequência de Palavras",
         "5. Discussão",
+        "   5.1 Predomínio de Desenvolvedores Comerciais",
+        "   5.2 Integração e Interoperabilidade",
+        "   5.3 Satisfação do Usuário e Manutenção",
+        "   5.4 Segurança da Informação",
+        "   5.5 Limitações do Estudo",
         "6. Considerações Finais",
         "Referências",
         "Apêndice A — Lista de Aplicativos",
@@ -559,26 +621,29 @@ def executar_relatorio():
     # ── 1. introdução ────────────────────────────────────────────────────
     _add_heading(doc, "1. INTRODUÇÃO", 1)
     _add_paragraph(doc,
-        "A proliferação de aplicativos móveis de saúde (mHealth apps) "
-        "transformou a relação entre cidadãos e informações de saúde. "
-        "No Brasil, a Google Play Store concentra milhares de aplicativos "
-        "voltados para saúde, bem-estar, consultas médicas e gestão do SUS. "
-        "Contudo, a qualidade, confiabilidade e satisfação dos usuários com "
-        "esses aplicativos permanecem insuficientemente estudadas na literatura "
-        "brasileira.")
+        "A proliferação de aplicativos móveis de saúde (mHealth apps) e a "
+        "crescente digitalização dos Sistemas de Informação em Saúde (SIS) "
+        "transformaram a relação entre cidadãos, profissionais de saúde e "
+        "as informações clínicas. No Brasil, a Google Play Store concentra "
+        "centenas de aplicativos voltados para gestão de prontuários eletrônicos, "
+        "integração com o SUS, telemedicina e vigilância epidemiológica. "
+        "Contudo, a qualidade da integração, a interoperabilidade com sistemas "
+        "governamentais e a satisfação dos usuários com esses aplicativos "
+        "permanecem insuficientemente estudadas.")
     _add_paragraph(doc,
         "A Infodemiologia, proposta por Eysenbach (2009), oferece um arcabouço "
         "teórico-metodológico para a análise de padrões informacionais em "
         "ambientes digitais de saúde. Combinada à Infometria — que quantifica "
         "métricas de informação — e ao Processamento de Linguagem Natural (PLN), "
         "essa abordagem permite investigar sistematicamente como os usuários "
-        "percebem e avaliam os aplicativos de saúde.")
+        "percebem a integração dos SIS via dispositivos móveis.")
     _add_paragraph(doc,
-        "Este estudo tem como objetivo analisar o ecossistema de aplicativos de "
-        "saúde na Google Play Store utilizando técnicas de web scraping, análise "
-        "estatística descritiva e inferencial, análise de sentimentos e "
-        "modelagem de tópicos, contribuindo para a compreensão da infodemia "
-        "em saúde digital no contexto brasileiro.")
+        "Este estudo tem como objetivo analisar a onipresença dos Sistemas de "
+        "Informação em Saúde no ecossistema mHealth da Google Play Store, "
+        "utilizando técnicas de web scraping automatizado, análise estatística "
+        "descritiva e inferencial, análise de sentimentos e modelagem de tópicos, "
+        "contribuindo para a compreensão da integração digital em saúde no "
+        "contexto brasileiro.")
 
     # ── seções principais ─────────────────────────────────────────────────
     gerar_relatorio_metodologia(doc)

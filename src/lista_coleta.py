@@ -147,7 +147,7 @@ def gerar_lista_apps_word(df: pd.DataFrame | None = None) -> Path:
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r2 = sub.add_run(
-        "Infodemiologia e Infometria de Aplicativos de Saúde — Google Play Store\n"
+        "Sistemas de Informação em Saúde — Integração mHealth via Google Play Store\n"
         "Marque a coluna 'Incluir?' para os apps que entrarão na análise.")
     r2.italic = True
     r2.font.size = Pt(12)
@@ -247,7 +247,7 @@ def gerar_lista_apps_word(df: pd.DataFrame | None = None) -> Path:
     rod.alignment = WD_ALIGN_PARAGRAPH.CENTER
     rr = rod.add_run(
         f"Total: {total} aplicativos coletados   |   "
-        "Gerado automaticamente pelo Pipeline de Infodemiologia   |   "
+        "Pipeline — Sistemas de Informação em Saúde / mHealth   |   "
         f"{datetime.now().strftime('%d/%m/%Y')}")
     rr.font.size = Pt(8)
     rr.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
