@@ -9,12 +9,14 @@ Executa todas as fases sequencialmente:
   4A.  Análise quantitativa (estatística descritiva e correlação)
   4B.  Análise qualitativa (PLN: sentimento, temas, LDA)
   5.   Geração de relatório Word (.docx)
+  6.   Conversão automática de todos os CSVs para Word
 
 Uso:
     python pipeline_principal.py              # executa tudo
     python pipeline_principal.py --fase 3     # apenas limpeza
     python pipeline_principal.py --fase 4a 4b # análises
     python pipeline_principal.py --fase 5     # apenas relatório
+    python pipeline_principal.py --fase 6     # apenas conversão CSV→Word
 """
 
 import argparse
@@ -51,10 +53,10 @@ def main():
         description="Pipeline de Infodemiologia — Aplicativos de Saúde")
     parser.add_argument(
         "--fase", nargs="*", default=None,
-        help="Fases a executar: 1 (coleta) 3 (limpeza) 4a 4b 5 (relatório). "
+        help="Fases a executar: 1 (coleta) 3 (limpeza) 4a 4b 5 (relatório) 6 (CSV→Word). "
              "Se omitido, executa todas.")
     args = parser.parse_args()
-    fases = set(f.lower() for f in args.fase) if args.fase else {"1","3","4a","4b","5"}
+    fases = set(f.lower() for f in args.fase) if args.fase else {"1","3","4a","4b","5","6"}
 
     logger = _configurar_log()
     logger.info("=" * 70)
@@ -95,6 +97,21 @@ def main():
         from src.relatorio import executar_relatorio
         out = executar_relatorio()
         logger.info(f"  → Relatório: {out}")
+
+    # ── Fase 6: Conversão CSV → Word ─────────────────────────────────────
+    if "6" in fases:
+        logger.info("▶ FASE 6: Conversão automática de CSVs para Word")
+        import importlib.util, sys as _sys
+        spec = importlib.util.spec_from_file_location(
+            "csv_para_word", ROOT / "csv_para_word.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        csvs = mod._coletar_csvs(mod.TABELAS_DIR)
+        if csvs:
+            saida = mod.gerar_documento_unico(csvs)
+            logger.info(f"  → Tabelas Word: {saida}")
+        else:
+            logger.warning("  → Nenhum CSV encontrado em resultados/tabelas/")
 
     elapsed = time.time() - t0
     logger.info("=" * 70)
