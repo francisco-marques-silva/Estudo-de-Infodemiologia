@@ -87,12 +87,29 @@ def executar_limpeza() -> tuple[pd.DataFrame, pd.DataFrame]:
     df.drop(columns=["_texto"], inplace=True)
     etapas.append(("Relevância temática", antes, len(df)))
 
-    # 6. Classificação de desenvolvedor
-    df["tipo_desenvolvedor"] = df["developer"].apply(
-        lambda d: "Institucional/Governamental"
-        if isinstance(d, str) and any(k in d.lower() for k in KEYWORDS_GOV)
-        else "Comercial"
-    )
+    # 6. Classificação de desenvolvedor (3 categorias)
+    _KEYWORDS_GOVERNO = [
+        "ministério", "ministerio", "secretaria", "governo",
+        "prefeitura", "municipal", "estadual", "federal",
+        "datasus", "sus", "fiocruz", "anvisa", "ans",
+    ]
+    _KEYWORDS_INST = [
+        "universidade", "university", "usp", "unicamp", "ufmg",
+        "instituto", "fundação", "fundacao", "hospital", "associação",
+        "crm", "cfm", "cfn", "coren", "cfp", "unimed", "einstein",
+    ]
+
+    def _classificar_dev(dev):
+        if not isinstance(dev, str):
+            return "Comercial"
+        d = dev.lower()
+        if any(k in d for k in _KEYWORDS_GOVERNO):
+            return "Governamental"
+        if any(k in d for k in _KEYWORDS_INST):
+            return "Institucional"
+        return "Comercial"
+
+    df["tipo_desenvolvedor"] = df["developer"].apply(_classificar_dev)
 
     # 7. Ordenar
     df = df.sort_values("instalacoes_num", ascending=False).reset_index(drop=True)

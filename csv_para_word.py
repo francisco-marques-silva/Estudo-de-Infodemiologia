@@ -43,8 +43,10 @@ TITULOS = {
     "distribuicao_desenvolvedor.csv": "Distribuição por Tipo de Desenvolvedor",
     "sentimentos.csv":                "Análise de Sentimentos das Avaliações",
     "distribuicao_tematica.csv":      "Distribuição Temática das Avaliações",
+    "sentimento_por_tema.csv":        "Sentimento Cruzado por Eixo Temático",
     "topicos_lda.csv":                "Modelagem de Tópicos (LDA)",
-    "frequencia_palavras.csv":        "Frequência de Palavras nas Avaliações",
+    "frequencia_palavras.csv":        "30 Palavras Mais Frequentes nas Avaliações",
+    "reviews_anotados.csv":           "Avaliações Anotadas (Sentimento + Tema)",
 }
 
 # Ordem de exibição preferencial (outros CSVs são adicionados ao final)
@@ -55,8 +57,10 @@ ORDEM = [
     "correlacoes.csv",
     "sentimentos.csv",
     "distribuicao_tematica.csv",
+    "sentimento_por_tema.csv",
     "topicos_lda.csv",
     "frequencia_palavras.csv",
+    "reviews_anotados.csv",
 ]
 
 
