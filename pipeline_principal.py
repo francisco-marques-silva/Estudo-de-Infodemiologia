@@ -6,17 +6,21 @@ Pipeline Principal — Infodemiologia de Aplicativos de Saúde na Google Play St
 Executa todas as fases sequencialmente:
   1-2. Coleta de dados (scraping Google Play Store)
   3.   Limpeza e filtragem
+  3.5  Seleção interativa dos apps para análise
   4A.  Análise quantitativa (estatística descritiva e correlação)
   4B.  Análise qualitativa (PLN: sentimento, temas, LDA)
   5.   Geração de relatório Word (.docx)
   6.   Conversão automática de todos os CSVs para Word
 
 Uso:
-    python pipeline_principal.py              # executa tudo
-    python pipeline_principal.py --fase 3     # apenas limpeza
-    python pipeline_principal.py --fase 4a 4b # análises
-    python pipeline_principal.py --fase 5     # apenas relatório
-    python pipeline_principal.py --fase 6     # apenas conversão CSV→Word
+    python pipeline_principal.py                    # executa tudo (com seleção)
+    python pipeline_principal.py --sem-selecao      # pula a seleção (usa todos)
+    python pipeline_principal.py --reselecionar     # força nova seleção
+    python pipeline_principal.py --fase 3           # apenas limpeza
+    python pipeline_principal.py --fase 3.5         # apenas seleção interativa
+    python pipeline_principal.py --fase 4a 4b       # apenas análises
+    python pipeline_principal.py --fase 5           # apenas relatório
+    python pipeline_principal.py --fase 6           # apenas conversão CSV→Word
 """
 
 import argparse
@@ -53,10 +57,30 @@ def main():
         description="Pipeline de Infodemiologia — Aplicativos de Saúde")
     parser.add_argument(
         "--fase", nargs="*", default=None,
-        help="Fases a executar: 1 (coleta) 3 (limpeza) 4a 4b 5 (relatório) 6 (CSV→Word). "
+        help="Fases a executar: 1 (coleta) 3 (limpeza) 3.5 (seleção) 4a 4b 5 6. "
              "Se omitido, executa todas.")
+    parser.add_argument(
+        "--sem-selecao", action="store_true",
+        help="Pula a seleção interativa e usa todos os apps limpos.")
+    parser.add_argument(
+        "--reselecionar", action="store_true",
+        help="Força nova seleção interativa mesmo que já exista uma seleção salva.")
     args = parser.parse_args()
-    fases = set(f.lower() for f in args.fase) if args.fase else {"1","3","4a","4b","5","6"}
+    fases = set(f.lower() for f in args.fase) if args.fase else {"1","3","3.5","4a","4b","5","6"}
+
+    # determinar modo de seleção
+    if args.sem_selecao:
+        modo_selecao = "todos"
+    elif args.reselecionar:
+        modo_selecao = "interativo"
+    else:
+        # se já existe seleção salva e a fase não foi explicitamente pedida, carrega
+        from src.config import CLEAN_DIR as _CLEAN
+        _sel = _CLEAN / "apps_selecionados.csv"
+        if _sel.exists() and args.fase and "3.5" not in (args.fase or []):
+            modo_selecao = "carregar"
+        else:
+            modo_selecao = "interativo"
 
     logger = _configurar_log()
     logger.info("=" * 70)
@@ -78,7 +102,12 @@ def main():
         from src.limpeza import executar_limpeza
         df_apps, df_reviews = executar_limpeza()
         logger.info(f"  → {len(df_apps)} apps, {len(df_reviews)} reviews após limpeza")
-
+    # ── Fase 3.5: Seleção ───────────────────────────────────────────
+    if "3.5" in fases:
+        logger.info("▶ FASE 3.5: Seleção interativa de apps para análise")
+        from src.selecao import executar_selecao
+        df_sel, df_rev_sel = executar_selecao(modo=modo_selecao)
+        logger.info(f"  → {len(df_sel)} apps selecionados, {len(df_rev_sel)} reviews")
     # ── Fase 4A: Quantitativa ────────────────────────────────────────────
     if "4a" in fases:
         logger.info("▶ FASE 4A: Análise quantitativa")

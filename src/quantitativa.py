@@ -26,12 +26,28 @@ sns.set_theme(style="whitegrid", palette="muted")
 
 
 def _carregar() -> tuple[pd.DataFrame, pd.DataFrame]:
-    csv_a = sorted(CLEAN_DIR.glob("apps_limpos_*.csv"), reverse=True)
-    csv_r = sorted(CLEAN_DIR.glob("reviews_limpos_*.csv"), reverse=True)
-    if not csv_a:
-        raise FileNotFoundError(f"Sem dados limpos em {CLEAN_DIR}")
-    df = pd.read_csv(csv_a[0], encoding="utf-8-sig")
-    df_r = pd.read_csv(csv_r[0], encoding="utf-8-sig") if csv_r else pd.DataFrame()
+    # Prefere seleção manual quando existir
+    sel   = CLEAN_DIR / "apps_selecionados.csv"
+    rev_sel = CLEAN_DIR / "reviews_selecionados.csv"
+    if sel.exists():
+        csv_a_path = sel
+        logger.info("Usando apps_selecionados.csv (seleção manual)")
+    else:
+        csv_a = sorted(CLEAN_DIR.glob("apps_limpos_*.csv"), reverse=True)
+        if not csv_a:
+            raise FileNotFoundError(f"Sem dados limpos em {CLEAN_DIR}")
+        csv_a_path = csv_a[0]
+        logger.info(f"Usando {csv_a_path.name}")
+
+    df = pd.read_csv(csv_a_path, encoding="utf-8-sig")
+
+    if rev_sel.exists():
+        df_r = pd.read_csv(rev_sel, encoding="utf-8-sig")
+        logger.info("Usando reviews_selecionados.csv")
+    else:
+        csv_r = sorted(CLEAN_DIR.glob("reviews_limpos_*.csv"), reverse=True)
+        df_r = pd.read_csv(csv_r[0], encoding="utf-8-sig") if csv_r else pd.DataFrame()
+
     for c in ["score", "instalacoes_num", "ratings", "reviews_count"]:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce")

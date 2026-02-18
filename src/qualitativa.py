@@ -88,10 +88,17 @@ def executar_analise_qualitativa() -> pd.DataFrame:
     logger.info("FASE 4B — Análise Qualitativa (PLN)")
     logger.info("=" * 60)
 
-    csv_files = sorted(CLEAN_DIR.glob("reviews_limpos_*.csv"), reverse=True)
-    if not csv_files:
-        raise FileNotFoundError(f"Sem reviews limpos em {CLEAN_DIR}")
-    df = pd.read_csv(csv_files[0], encoding="utf-8-sig")
+    # Prefere seleção manual quando existir
+    rev_sel = CLEAN_DIR / "reviews_selecionados.csv"
+    if rev_sel.exists():
+        df = pd.read_csv(rev_sel, encoding="utf-8-sig")
+        logger.info("Usando reviews_selecionados.csv (seleção manual)")
+    else:
+        csv_files = sorted(CLEAN_DIR.glob("reviews_limpos_*.csv"), reverse=True)
+        if not csv_files:
+            raise FileNotFoundError(f"Sem reviews limpos em {CLEAN_DIR}")
+        df = pd.read_csv(csv_files[0], encoding="utf-8-sig")
+        logger.info(f"Usando {csv_files[0].name}")
     df = df.dropna(subset=["content"]).copy()
     logger.info(f"Reviews para PLN: {len(df)}")
 
