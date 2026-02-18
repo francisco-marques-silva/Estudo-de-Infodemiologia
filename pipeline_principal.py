@@ -5,6 +5,7 @@ Pipeline Principal — Infodemiologia de Aplicativos de Saúde na Google Play St
 
 Executa todas as fases sequencialmente:
   1-2. Coleta de dados (scraping Google Play Store)
+  2.5  Lista Word de TODOS os apps coletados (para revisão manual)
   3.   Limpeza e filtragem
   3.5  Seleção interativa dos apps para análise
   4A.  Análise quantitativa (estatística descritiva e correlação)
@@ -16,6 +17,7 @@ Uso:
     python pipeline_principal.py                    # executa tudo (com seleção)
     python pipeline_principal.py --sem-selecao      # pula a seleção (usa todos)
     python pipeline_principal.py --reselecionar     # força nova seleção
+    python pipeline_principal.py --fase 2.5         # apenas lista Word de revisão
     python pipeline_principal.py --fase 3           # apenas limpeza
     python pipeline_principal.py --fase 3.5         # apenas seleção interativa
     python pipeline_principal.py --fase 4a 4b       # apenas análises
@@ -66,7 +68,7 @@ def main():
         "--reselecionar", action="store_true",
         help="Força nova seleção interativa mesmo que já exista uma seleção salva.")
     args = parser.parse_args()
-    fases = set(f.lower() for f in args.fase) if args.fase else {"1","3","3.5","4a","4b","5","6"}
+    fases = set(f.lower() for f in args.fase) if args.fase else {"1","2.5","3","3.5","4a","4b","5","6"}
 
     # determinar modo de seleção
     if args.sem_selecao:
@@ -95,6 +97,15 @@ def main():
         from src.coleta import executar_coleta
         df_apps, df_reviews = executar_coleta()
         logger.info(f"  → {len(df_apps)} apps, {len(df_reviews)} reviews coletados")
+
+    # ── Fase 2.5: Lista Word para revisão ────────────────────────────────
+    if "2.5" in fases:
+        logger.info("▶ FASE 2.5: Geração da lista Word de apps para revisão")
+        from src.lista_coleta import executar_lista_coleta
+        # passa o df_apps coletado nesta execução, se disponível
+        _df_brutos = df_apps if "1" in fases and "df_apps" in dir() else None
+        out25 = executar_lista_coleta(_df_brutos)
+        logger.info(f"  → Lista gerada: {out25}")
 
     # ── Fase 3: Limpeza ──────────────────────────────────────────────────
     if "3" in fases:
